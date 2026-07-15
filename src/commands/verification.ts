@@ -1,11 +1,20 @@
 /**
  * commands/verification.ts
  * ─────────────────────────────────────────────────────────────────────────
- * /verification [channel]
+ * /verification <panel> [channel]
  *
- * Deploys the permanent Verification panel to a channel. Same shape as
- * /self-roles — admin-only, reuses resolveTargetChannel() from the recent
- * infrastructure refactor instead of duplicating that logic again.
+ * Deploys a Verification-domain panel to a channel. `panel` chooses
+ * which one — Main (the original two-button panel) or Pre-Entry (a
+ * single "Enter Code" button for Lobby members verifying later). Both
+ * panels feed into the exact same verification flow — see
+ * embeds/preEntryPanel.ts for how the Pre-Entry panel reuses the Main
+ * panel's button/modal/service without any duplicated logic.
+ *
+ * One command for the whole Verification domain, choosing which panel to
+ * post, rather than a separate command per panel — keeps this scalable
+ * as more panel variants show up later, and is a small step toward how a
+ * future Panel Manager would work (one deploy surface, multiple panel
+ * choices) without building that manager now.
  */
 
 import {
@@ -16,13 +25,34 @@ import {
 } from 'discord.js';
 import { Command } from '../types';
 import { buildVerificationPanelPayload } from '../embeds/verificationPanel';
+import { buildPreEntryPanelPayload } from '../embeds/preEntryPanel';
 import { resolveTargetChannel } from '../utils/resolveTargetChannel';
 import { logger } from '../utils/logger';
+
+const PANEL_BUILDERS: Record<string, () => ReturnType<typeof buildVerificationPanelPayload>> = {
+  main: buildVerificationPanelPayload,
+  'pre-entry': buildPreEntryPanelPayload,
+};
+
+const PANEL_LABELS: Record<string, string> = {
+  main: 'Main Verification',
+  'pre-entry': 'Pre-Entry',
+};
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName('verification')
-    .setDescription('Deploy the Verification panel to a channel.')
+    .setDescription('Deploy a verification panel to a channel.')
+    .addStringOption((option) =>
+      option
+        .setName('panel')
+        .setDescription('Which verification panel to deploy')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Main Verification', value: 'main' },
+          { name: 'Pre-Entry', value: 'pre-entry' },
+        ),
+    )
     .addChannelOption((option) =>
       option
         .setName('channel')
@@ -34,6 +64,7 @@ const command: Command = {
     .setDMPermission(false),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+    const panelKey = interaction.options.getString('panel', true);
     const targetChannel = resolveTargetChannel(interaction);
 
     if (!targetChannel) {
@@ -44,17 +75,23 @@ const command: Command = {
       return;
     }
 
+    const buildPayload = PANEL_BUILDERS[panelKey];
+    if (!buildPayload) {
+      await interaction.reply({ content: '❌ Unknown panel type.', ephemeral: true });
+      return;
+    }
+
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      await targetChannel.send(buildVerificationPanelPayload());
+      await targetChannel.send(buildPayload());
 
       await interaction.editReply({
-        content: `✅ Verification panel deployed to ${targetChannel}.`,
+        content: `✅ ${PANEL_LABELS[panelKey]} panel deployed to ${targetChannel}.`,
       });
 
       logger.info(
-        `${interaction.user.tag} deployed the Verification panel to #${targetChannel.name}`,
+        `${interaction.user.tag} deployed the ${PANEL_LABELS[panelKey]} panel to #${targetChannel.name}`,
         'VerificationCommand',
       );
     } catch (error) {
