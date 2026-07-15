@@ -19,6 +19,7 @@ import { loadButtons } from './handlers/buttonHandler';
 import { loadModals } from './handlers/modalHandler';
 import { loadSelectMenus } from './handlers/selectMenuHandler';
 import { loadEvents } from './handlers/eventHandler';
+import { startGiveawayScheduler } from './services/giveawayScheduler';
 import { logger } from './utils/logger';
 
 async function main(): Promise<void> {
@@ -31,6 +32,11 @@ async function main(): Promise<void> {
   await loadEvents(client);
 
   await client.login(env.DISCORD_TOKEN);
+
+  // Started after login (not tied to the 'ready' event) since it only
+  // needs client.channels.fetch(), which hits Discord's REST API directly
+  // rather than depending on gateway cache being fully populated.
+  startGiveawayScheduler(client);
 }
 
 main().catch((error) => {
