@@ -48,8 +48,14 @@ const button: Button = {
     await interaction.editReply({
       embeds: [
         embeds.success({
-          title: 'Joined the Waiting Area',
-          description: 'A team member will assist you shortly.',
+          title: 'You\u2019re in the Lobby!',
+          description: [
+            'Welcome! While you wait, you now have access to:',
+            '',
+            '• ⚓ Pre-Entry',
+            '• 💬 Lobby Chat',
+            '• 🎁 Lobby Giveaways',
+          ].join('\n'),
         }),
       ],
     });
