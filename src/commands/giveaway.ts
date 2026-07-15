@@ -192,4 +192,4 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
   });
 }
 
-export default command;
+export default command; 
