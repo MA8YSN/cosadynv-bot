@@ -10,7 +10,7 @@
 import { ModalSubmitInteraction } from 'discord.js';
 import { ModalHandler } from '../types';
 import { validateInviteCode, grantVerifiedRole } from '../services/verificationService';
-import { embeds } from '../ui';
+import { embeds, createEmbed, colors } from '../ui';
 
 const modal: ModalHandler = {
   customId: 'verify_code_modal',
@@ -64,9 +64,19 @@ const modal: ModalHandler = {
 
     await interaction.editReply({
       embeds: [
-        embeds.success({
-          title: 'Verified!',
-          description: 'Welcome to the server \u2014 you now have full access.',
+        // Using createEmbed() directly rather than embeds.success() here —
+        // that preset always force-prefixes the title with icons.success
+        // (✅), and this specific message wants 🎉 instead. Deliberate,
+        // documented exception, same pattern as embeds/draftEmbedRenderer.ts.
+        createEmbed({
+          title: '🎉 Verification Complete',
+          description: [
+            'Welcome to Cosadynv.',
+            '',
+            'You now have access to the full community.',
+            'Enjoy your stay! 🚀',
+          ].join('\n'),
+          color: colors.success,
         }),
       ],
     });
