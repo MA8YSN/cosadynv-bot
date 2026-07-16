@@ -62,3 +62,13 @@ export const brand = {
   name: botConfig.name,
   iconURL: undefined as string | undefined,
 };
+/**
+ * Converts a numeric color (e.g. colors.primary, the format ui/embed.ts
+ * uses) into a CSS hex string (e.g. "#5865f2"), the format
+ * @napi-rs/canvas expects. Lets welcomeThemes.config.ts reuse the bot's
+ * actual brand colors instead of hardcoding a second, separate set of
+ * hex values that could drift out of sync.
+ */
+export function toHex(color: number): string {
+  return `#${color.toString(16).padStart(6, '0')}`;
+}
