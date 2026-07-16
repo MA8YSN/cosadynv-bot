@@ -16,6 +16,7 @@ export interface GiveawayPanelData {
   prize: string;
   winnerCount: number;
   endsAt: Date;
+  entryCount: number;
 }
 
 export function buildActiveGiveawayPanelEmbed(giveaway: GiveawayPanelData) {
@@ -27,6 +28,7 @@ export function buildActiveGiveawayPanelEmbed(giveaway: GiveawayPanelData) {
     description: [
       `**Prize:** ${giveaway.prize}`,
       `**Winners:** ${giveaway.winnerCount}`,
+      `**Entries:** ${giveaway.entryCount}`,
       `**Ends:** <t:${endsAtSeconds}:R>`,
       '',
       'Click the button below to enter!',
