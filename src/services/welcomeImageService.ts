@@ -205,6 +205,7 @@ export async function renderWelcomeCard(
   layout: WelcomeThemeLayout,
   data: ResolvedWelcomeData,
 ): Promise<Buffer> {
+      console.log("🎨 Rendering welcome card:", layout.key);
   const canvas = createCanvas(layout.canvas.width, layout.canvas.height);
   const ctx = canvas.getContext('2d');
 
