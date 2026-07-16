@@ -97,6 +97,18 @@ export async function listExpiredActiveGiveaways(): Promise<GiveawayRow[]> {
   return (data as GiveawayRow[]) ?? [];
 }
 
+/**
+ * Every active giveaway, bot-wide — no guild filter, same as
+ * listExpiredActiveGiveaways above. Used by the scheduler's entry-count
+ * refresh pass, which (like the expiry check) operates across every
+ * server the bot is in, not one at a time.
+ */
+export async function listAllActiveGiveaways(): Promise<GiveawayRow[]> {
+  const { data, error } = await supabase.from('giveaways').select().eq('status', 'active');
+  if (error) throw new Error(`Failed to list active giveaways: ${error.message}`);
+  return (data as GiveawayRow[]) ?? [];
+}
+
 export async function markGiveawayEnded(id: string): Promise<void> {
   const { error } = await supabase
     .from('giveaways')
