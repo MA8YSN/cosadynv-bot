@@ -7,6 +7,16 @@
  */
 
 export const GIVEAWAY_CONFIG = {
-  /** How often the background scheduler checks for expired giveaways. */
+  /**
+   * How often the background scheduler runs. Each tick does two things:
+   * ends any giveaway whose duration has elapsed, and refreshes the live
+   * entry count on every other active giveaway's panel (only editing a
+   * panel if its count actually changed since the last tick).
+   *
+   * Lower = more responsive entry-count updates, more Discord API calls.
+   * Higher = less responsive, fewer calls. 30s is a reasonable default
+   * for most communities — smaller/quieter servers could go to 10-15s,
+   * very large ones may prefer 60s.
+   */
   schedulerIntervalMs: 30 * 1000,
 };
