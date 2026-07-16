@@ -23,9 +23,14 @@ export const botConfig = {
    * Gateway intents: the events Discord will actually send us.
    * Only request what's needed — fewer intents means less data to process
    * and fewer privileged-intent approvals required in the Dev Portal.
-   * Expand this as features (welcome messages, reaction roles, etc.) land.
+   *
+   * GuildMembers is a PRIVILEGED intent — added here for the Welcome
+   * System's guildMemberAdd listener, but code alone isn't enough: it
+   * must also be manually enabled in the Discord Developer Portal
+   * (Bot tab -> Server Members Intent), or the gateway connection will
+   * be rejected outright once this intent is requested.
    */
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 
   /** Partials let discord.js handle uncached structures (e.g. old messages). */
   partials: [Partials.Message, Partials.Channel],
