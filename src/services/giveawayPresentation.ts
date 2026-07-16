@@ -17,6 +17,7 @@ import { Client, Message, TextChannel } from 'discord.js';
 import { GiveawayRow } from '../database/giveaways.repository';
 import {
   buildGiveawayPanelPayload,
+  buildActiveGiveawayPanelEmbed,
   buildEndedGiveawayPanelEmbed,
   GiveawayPanelData,
 } from '../embeds/giveawayPanel';
@@ -84,6 +85,40 @@ export async function announceGiveawayWinners(
     if (!channel || !(channel instanceof TextChannel)) return;
 
     await channel.send(buildGiveawayResultPayload(giveaway, winnerUserIds, reason));
+  } catch (error) {
+    logger.error(error as Error, 'GiveawayPresentation');
+  }
+}
+/**
+ * Edits the panel's embed to reflect a new entry count. Only `embeds` is
+ * passed to `.edit()` — `components` is deliberately omitted rather than
+ * re-specified, which leaves the existing Enter button exactly as it was
+ * (Discord's message edit only touches fields you explicitly include).
+ *
+ * Called from services/giveawayScheduler.ts, and only when the count has
+ * actually changed since the last tick — never on every single entry.
+ */
+export async function updateGiveawayPanelEntryCount(
+  client: Client,
+  giveaway: GiveawayRow,
+  entryCount: number,
+): Promise<void> {
+  try {
+    const channel = await client.channels.fetch(giveaway.channel_id);
+    if (!channel || !(channel instanceof TextChannel)) return;
+
+    const message = await channel.messages.fetch(giveaway.message_id);
+    await message.edit({
+      embeds: [
+        buildActiveGiveawayPanelEmbed({
+          id: giveaway.id,
+          prize: giveaway.prize,
+          winnerCount: giveaway.winner_count,
+          endsAt: new Date(giveaway.ends_at),
+          entryCount,
+        }),
+      ],
+    });
   } catch (error) {
     logger.error(error as Error, 'GiveawayPresentation');
   }
