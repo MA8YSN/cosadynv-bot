@@ -52,6 +52,7 @@ export async function createGiveaway(params: CreateGiveawayParams): Promise<repo
     prize: params.prize,
     winnerCount: params.winnerCount,
     endsAt: params.endsAt,
+    entryCount: 0,
   });
 
   try {
