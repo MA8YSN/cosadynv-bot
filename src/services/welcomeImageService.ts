@@ -191,7 +191,7 @@ function drawTextElement(
   } catch {
     // Ignored — letter spacing is a cosmetic nicety, not worth failing the render over.
   }
-
+console.log("Drawing text:", resolvedContent);
   ctx.fillText(resolvedContent, ax(layout, element.anchor.x), ay(layout, element.anchor.y));
 }
 
