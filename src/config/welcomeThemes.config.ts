@@ -133,7 +133,7 @@ export const CLASSIC_THEME: WelcomeThemeLayout = {
       color: '#8A8A8A',
     },
   ],
-  fonts: { heading: 'sans-serif', body: 'sans-serif' },
+  fonts: { heading: WELCOME_CONFIG.fontFamily, body: WELCOME_CONFIG.fontFamily },
 };
 
 export const SPACE_THEME: WelcomeThemeLayout = {
@@ -198,7 +198,7 @@ export const SPACE_THEME: WelcomeThemeLayout = {
       color: '#6C6C8A',
     },
   ],
-  fonts: { heading: 'sans-serif', body: 'sans-serif' },
+  fonts: { heading: WELCOME_CONFIG.fontFamily, body: WELCOME_CONFIG.fontFamily },
 };
 
 export const WELCOME_THEMES: WelcomeThemeLayout[] = [CLASSIC_THEME, SPACE_THEME];
