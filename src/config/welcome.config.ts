@@ -26,4 +26,16 @@ export const WELCOME_CONFIG = {
 
   /** Setup wizard draft sessions auto-expire after this long, matching Embed Studio's convention. */
   sessionTtlMs: 15 * 60 * 1000,
+
+  /**
+   * @napi-rs/canvas has no fallback system font on a bare container —
+   * without an explicitly bundled + registered font, card text renders
+   * invisibly. `fontFamily` is the name we register the file under
+   * (arbitrary — not tied to the actual font's real name);
+   * `fontFileName` is the file expected at assets/fonts/<fontFileName>.
+   * See assets/fonts/README.md for setup and
+   * services/welcomeImageService.ts for where this gets loaded.
+   */
+  fontFamily: 'WelcomeCardFont',
+  fontFileName: 'Inter-Regular.ttf',
 };
