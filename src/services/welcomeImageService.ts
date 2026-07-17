@@ -16,9 +16,44 @@
  * drawing function.
  */
 
-import { createCanvas, loadImage, SKRSContext2D } from '@napi-rs/canvas';
+import { createCanvas, GlobalFonts, loadImage, SKRSContext2D } from '@napi-rs/canvas';
+import { join } from 'node:path';
 import { DecorationSpec, TextElementSpec, WelcomeThemeLayout } from '../config/welcomeThemes.config';
 import { ResolvedWelcomeData, resolveWelcomeVariables } from './welcomeVariables';
+import { WELCOME_CONFIG } from '../config/welcome.config';
+import { logger } from '../utils/logger';
+
+/**
+ * __dirname-relative, not process.cwd()-relative: this resolves
+ * correctly whether running via tsx from src/ (dev) or compiled JS from
+ * dist/ (prod) — both sit at the same folder depth under the project
+ * root, so "two levels up" reaches assets/fonts/ either way, regardless
+ * of the shell's working directory when the process was launched.
+ */
+const FONT_PATH = join(__dirname, '..', '..', 'assets', 'fonts', WELCOME_CONFIG.fontFileName);
+
+let fontRegistrationAttempted = false;
+
+/**
+ * Registers the bundled font once per process. Without this, card text
+ * renders invisibly on a bare container — see assets/fonts/README.md.
+ * Safe to call on every render; the guard makes repeat calls a no-op.
+ */
+function ensureFontRegistered(): void {
+  if (fontRegistrationAttempted) return;
+  fontRegistrationAttempted = true;
+
+  try {
+    GlobalFonts.registerFromPath(FONT_PATH, WELCOME_CONFIG.fontFamily);
+  } catch (error) {
+    logger.error(
+      `Failed to register welcome card font from ${FONT_PATH} — card text will not render. ` +
+        'See assets/fonts/README.md.',
+      'WelcomeImageService',
+    );
+    logger.error(error as Error, 'WelcomeImageService');
+  }
+}
 
 /** Converts a 0–1 fraction anchor into an absolute pixel coordinate for this layout's canvas. */
 function ax(layout: WelcomeThemeLayout, x: number): number {
@@ -179,7 +214,13 @@ function drawTextElement(
   element: TextElementSpec,
   resolvedContent: string,
 ): void {
-  ctx.font = `${element.weight === 'bold' ? 'bold ' : ''}${element.size}px ${layout.fonts[element.font]}`;
+  // V1 registers a single font weight/face (see ensureFontRegistered
+  // above) — requesting "bold" here with no matching bold face
+  // registered risks the exact silent-invisible-text failure this file
+  // was just fixed for. Visual hierarchy for V1 comes from `size`
+  // differences between elements instead. Revisit once a bold-weight
+  // font file is also bundled and registered under its own family name.
+  ctx.font = `${element.size}px ${layout.fonts[element.font]}`;
   ctx.fillStyle = element.color;
   ctx.textAlign = element.align;
   ctx.textBaseline = 'middle';
@@ -205,7 +246,8 @@ export async function renderWelcomeCard(
   layout: WelcomeThemeLayout,
   data: ResolvedWelcomeData,
 ): Promise<Buffer> {
-      console.log("🎨 Rendering welcome card:", layout.key);
+  ensureFontRegistered();
+
   const canvas = createCanvas(layout.canvas.width, layout.canvas.height);
   const ctx = canvas.getContext('2d');
 
