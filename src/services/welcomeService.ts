@@ -61,6 +61,6 @@ export async function sendWelcome(client: Client, member: GuildMember): Promise<
         `Could not DM welcome to ${member.user.tag} (DMs likely closed)`,
         'WelcomeService',
       );
-    }
+    } 
   }
 }
