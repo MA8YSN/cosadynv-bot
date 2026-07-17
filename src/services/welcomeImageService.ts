@@ -207,11 +207,6 @@ async function drawClippedImage(
     ctx.stroke();
   }
 }
-function normalizeForCanvas(text: string): string {
-  return text
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
 
 function drawTextElement(
   ctx: SKRSContext2D,
@@ -238,13 +233,7 @@ function drawTextElement(
     // Ignored — letter spacing is a cosmetic nicety, not worth failing the render over.
   }
 console.log("Drawing text:", resolvedContent);
- const safeText = normalizeForCanvas(resolvedContent);
-console.log([...resolvedContent].map(c => `${c} (${c.codePointAt(0)?.toString(16)})`));
-ctx.fillText(
-  safeText,
-  ax(layout, element.anchor.x),
-  ay(layout, element.anchor.y),
-);
+  ctx.fillText(resolvedContent, ax(layout, element.anchor.x), ay(layout, element.anchor.y));
 }
 
 /**
