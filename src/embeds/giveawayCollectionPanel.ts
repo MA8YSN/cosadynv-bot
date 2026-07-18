@@ -22,7 +22,9 @@ export function buildCollectionPanelEmbed(giveaway: GiveawayRow, status: Collect
     : null;
 
   const winnerLines = status.rows.map((r) => {
-    const statusIcon = r.submitted ? '🟢' : '🔴';
+    // Yellow (waiting) rather than red — red implies something's wrong,
+    // this is just "hasn't submitted yet."
+    const statusIcon = r.submitted ? '🟢' : '🟡';
     const statusText =
       r.submitted && r.submittedAt
         ? `Submitted <t:${Math.floor(new Date(r.submittedAt).getTime() / 1000)}:R>`
@@ -45,19 +47,27 @@ export function buildCollectionPanelEmbed(giveaway: GiveawayRow, status: Collect
   return embeds.brand({
     title: `🏆 ${type?.label ?? 'Winner'} Collection`,
     description: descriptionLines.join('\n'),
+    footerText: 'Submitted wallets remain private.',
   });
 }
 
 /** Full message payload — embed + the submit button — ready to send or use to edit an existing message. */
 export function buildCollectionPanelPayload(giveaway: GiveawayRow, status: CollectionStatus) {
   const type = getCollectionTypeByKey(giveaway.collection_type);
+  const allSubmitted = status.totalCount > 0 && status.submittedCount === status.totalCount;
 
   const actionRow = row(
-    buttons.success({
-      customId: `giveaway_collection_submit:${giveaway.id}`,
-      label: type?.buttonLabel ?? 'Submit',
-      icon: 'wallet',
-    }),
+    allSubmitted
+      ? buttons.secondary({
+          customId: `giveaway_collection_submit:${giveaway.id}`,
+          label: '✅ All Wallets Collected',
+          disabled: true,
+        })
+      : buttons.success({
+          customId: `giveaway_collection_submit:${giveaway.id}`,
+          label: type?.buttonLabel ?? 'Submit',
+          icon: 'wallet',
+        }),
   );
 
   return {
