@@ -35,6 +35,10 @@ export interface GiveawayRow {
   created_at: string;
   ends_at: string;
   ended_at: string | null;
+  collection_type: string | null;
+  collection_config: Record<string, unknown> | null;
+  collection_channel_id: string | null;
+  collection_message_id: string | null;
 }
 
 export interface CreateGiveawayInput {
@@ -46,6 +50,9 @@ export interface CreateGiveawayInput {
   winnerCount: number;
   createdBy: string;
   endsAt: Date;
+  /** Undefined means no winner collection for this giveaway — behaves exactly as before. */
+  collectionType?: string;
+  collectionConfig?: Record<string, unknown>;
 }
 
 export async function insertGiveaway(input: CreateGiveawayInput): Promise<GiveawayRow> {
@@ -60,12 +67,28 @@ export async function insertGiveaway(input: CreateGiveawayInput): Promise<Giveaw
       winner_count: input.winnerCount,
       created_by: input.createdBy,
       ends_at: input.endsAt.toISOString(),
+      collection_type: input.collectionType ?? null,
+      collection_config: input.collectionConfig ?? null,
     })
     .select()
     .single();
 
   if (error || !data) throw new Error(`Failed to insert giveaway: ${error?.message}`);
   return data as GiveawayRow;
+}
+
+/** Records where the winner-collection panel was posted, so it can be edited on later submissions. */
+export async function setCollectionPanelMessage(
+  id: string,
+  channelId: string,
+  messageId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('giveaways')
+    .update({ collection_channel_id: channelId, collection_message_id: messageId })
+    .eq('id', id);
+
+  if (error) throw new Error(`Failed to save collection panel message: ${error.message}`);
 }
 
 export async function getGiveaway(id: string): Promise<GiveawayRow | null> {
