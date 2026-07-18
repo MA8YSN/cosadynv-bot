@@ -20,7 +20,10 @@ import {
   deleteGiveawayMessage,
   updateGiveawayPanelEnded,
   announceGiveawayWinners,
+  postCollectionPanel,
 } from './giveawayPresentation';
+import { getCollectionStatus } from './giveawayCollectionService';
+import { SupportedChain } from '../config/giveawayCollectionTypes.config';
 import { logger } from '../utils/logger';
 
 export interface CreateGiveawayParams {
@@ -30,6 +33,8 @@ export interface CreateGiveawayParams {
   winnerCount: number;
   createdBy: string;
   endsAt: Date;
+  /** Optional — omitting this means no winner collection, behaving exactly as before. */
+  chain?: SupportedChain;
 }
 
 /**
@@ -65,6 +70,8 @@ export async function createGiveaway(params: CreateGiveawayParams): Promise<repo
       winnerCount: params.winnerCount,
       createdBy: params.createdBy,
       endsAt: params.endsAt,
+      collectionType: params.chain ? 'wallet' : undefined,
+      collectionConfig: params.chain ? { chain: params.chain } : undefined,
     });
   } catch (error) {
     logger.error(error as Error, 'GiveawayService');
@@ -118,6 +125,13 @@ async function determineGiveawayOutcome(
  * scheduler (automatic) and /giveaway end (manual) — see
  * services/giveawayScheduler.ts and commands/giveaway.ts. Returns false
  * if there was nothing to end (already ended, or doesn't exist).
+ *
+ * If the giveaway has a collection_type (e.g. a chain was set at
+ * creation), the usual winner announcement still posts first — it's what
+ * actually pings winners, since embed mentions don't — and the winner
+ * collection panel is posted as a follow-up message right after.
+ * Giveaways without a collection_type behave exactly as before this
+ * feature existed.
  */
 export async function endGiveaway(client: Client, giveawayId: string): Promise<boolean> {
   const outcome = await determineGiveawayOutcome(giveawayId);
@@ -125,6 +139,21 @@ export async function endGiveaway(client: Client, giveawayId: string): Promise<b
 
   await updateGiveawayPanelEnded(client, outcome.giveaway);
   await announceGiveawayWinners(client, outcome.giveaway, outcome.winners, 'initial');
+
+  if (outcome.giveaway.collection_type) {
+    const status = await getCollectionStatus(outcome.giveaway.id);
+    const message = await postCollectionPanel(
+      client,
+      outcome.giveaway.channel_id,
+      outcome.giveaway,
+      status,
+    );
+
+    if (message) {
+      await repo.setCollectionPanelMessage(outcome.giveaway.id, outcome.giveaway.channel_id, message.id);
+    }
+  }
+
   return true;
 }
 
