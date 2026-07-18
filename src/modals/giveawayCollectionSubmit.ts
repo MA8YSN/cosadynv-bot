@@ -34,7 +34,7 @@ const modal: ModalHandler = {
     const outcome = await submitCollectionEntry(giveaway, interaction.user.id, value);
 
     if (outcome === 'not-a-winner') {
-      await interaction.editReply({ content: '❌ You are not a winner of this giveaway.' });
+      await interaction.editReply({ content: '❌ You weren\u2019t selected for this giveaway.' });
       return;
     }
 
