@@ -71,8 +71,19 @@ export async function updateGiveawayPanelEnded(
       components: [],
     });
   } catch (error) {
-    logger.error(error as Error, 'GiveawayPresentation');
-  }
+  logger.error(
+    new Error(
+      [
+        'Failed to update giveaway panel',
+        `Giveaway ID: ${giveaway.id}`,
+        `Channel ID: ${giveaway.channel_id}`,
+        `Message ID: ${giveaway.message_id}`,
+        `Original Error: ${error}`,
+      ].join('\n'),
+    ),
+    'GiveawayPresentation',
+  );
+}
 }
 
 /** Posts a winner announcement message to the giveaway's channel. */
@@ -88,8 +99,19 @@ export async function announceGiveawayWinners(
 
     await channel.send(buildGiveawayResultPayload(giveaway, winnerUserIds, reason));
   } catch (error) {
-    logger.error(error as Error, 'GiveawayPresentation');
-  }
+  logger.error(
+    new Error(
+      [
+        'Failed to announce giveaway winners',
+        `Giveaway ID: ${giveaway.id}`,
+        `Channel ID: ${giveaway.channel_id}`,
+        `Message ID: ${giveaway.message_id}`,
+        `Original Error: ${error}`,
+      ].join('\n'),
+    ),
+    'GiveawayPresentation',
+  );
+}
 }
 /**
  * Edits the panel's embed to reflect a new entry count. Only `embeds` is
@@ -122,8 +144,19 @@ export async function updateGiveawayPanelEntryCount(
       ],
     });
   } catch (error) {
-    logger.error(error as Error, 'GiveawayPresentation');
-  }
+  logger.error(
+    new Error(
+      [
+        'Failed to update giveaway entry count',
+        `Giveaway ID: ${giveaway.id}`,
+        `Channel ID: ${giveaway.channel_id}`,
+        `Message ID: ${giveaway.message_id}`,
+        `Original Error: ${error}`,
+      ].join('\n'),
+    ),
+    'GiveawayPresentation',
+  );
+}
   
 }
 /** Posts the winner collection panel for the first time (called once, when a giveaway with a collection type ends). */
