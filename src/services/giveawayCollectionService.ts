@@ -9,6 +9,7 @@
  * is expected, same as giveawayScheduler.ts already does.
  */
 
+import { Client } from 'discord.js';
 import { getGiveaway, getWinners, GiveawayRow } from '../database/giveaways.repository';
 import {
   getCollectionEntries,
@@ -90,19 +91,35 @@ export async function getCollectionStatus(giveawayId: string): Promise<Collectio
   };
 }
 
-/**
- * Exports raw Discord user IDs rather than resolved usernames — IDs are
- * stable and unambiguous (usernames change), and resolving each winner
- * via the Discord API would add real complexity for a nice-to-have.
- * Revisit if staff specifically ask for usernames in the export.
- */
-export async function exportCollectionAsCsv(giveaway: GiveawayRow): Promise<string> {
+/** Resolves a Discord user ID to a username for the CSV export, falling back to the raw ID if the user can't be fetched (left the server, etc). */
+async function resolveUsername(client: Client, userId: string): Promise<string> {
+  try {
+    const user = await client.users.fetch(userId);
+    return user.username;
+  } catch {
+    return userId;
+  }
+}
+
+function formatCsvTimestamp(iso: string): string {
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
+}
+
+export async function exportCollectionAsCsv(giveaway: GiveawayRow, client: Client): Promise<string> {
   const type = getCollectionTypeByKey(giveaway.collection_type);
   const fieldLabel = type?.fieldLabel ?? 'Value';
   const entries = await getCollectionEntries(giveaway.id);
 
-  const header = `Winner (Discord ID),${fieldLabel},Submitted At`;
-  const lines = entries.map((entry) => `${entry.user_id},${entry.value},${entry.submitted_at}`);
+  const header = `User,${fieldLabel},Submitted`;
+
+  const lines = await Promise.all(
+    entries.map(async (entry) => {
+      const username = await resolveUsername(client, entry.user_id);
+      return `${username},${entry.value},${formatCsvTimestamp(entry.submitted_at)}`;
+    }),
+  );
 
   return [header, ...lines].join('\n');
 }
