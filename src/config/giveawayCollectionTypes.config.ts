@@ -19,6 +19,7 @@ export interface CollectionTypeDefinition {
   fieldLabel: string;
   buttonLabel: string;
   getModalTitle: (config: Record<string, unknown>) => string;
+  getPlaceholder?: (config: Record<string, unknown>) => string;
   /** Basic format sanity checks — not cryptographic/checksum validation. */
   validate: (value: string, config: Record<string, unknown>) => boolean;
 }
@@ -32,12 +33,22 @@ const CHAIN_VALIDATORS: Record<string, RegExp> = {
   BTC: /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/,
 };
 
+const CHAIN_PLACEHOLDERS: Record<string, string> = {
+  SOL: 'Enter your SOL wallet',
+  ETH: '0x...',
+  BTC: 'bc1...',
+};
+
 export const WALLET_COLLECTION_TYPE: CollectionTypeDefinition = {
   key: 'wallet',
   label: 'Wallet',
   fieldLabel: 'Wallet Address',
   buttonLabel: 'Submit Wallet',
   getModalTitle: (config) => `Submit ${(config.chain as string) ?? ''} Wallet`.trim(),
+  getPlaceholder: (config) => {
+    const chain = (config.chain as string) ?? '';
+    return CHAIN_PLACEHOLDERS[chain] ?? 'Enter your wallet address';
+  },
   validate: (value, config) => {
     const chain = (config.chain as string) ?? '';
     const pattern = CHAIN_VALIDATORS[chain];
