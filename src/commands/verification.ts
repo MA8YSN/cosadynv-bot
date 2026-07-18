@@ -1,108 +1,91 @@
 /**
  * commands/verification.ts
  * ─────────────────────────────────────────────────────────────────────────
- * /verification <panel> [channel]
+ * /verification mode <simple|captcha|code_lobby>
  *
- * Deploys a Verification-domain panel to a channel. `panel` chooses
- * which one — Main (the original two-button panel) or Pre-Entry (a
- * single "Enter Code" button for Lobby members verifying later). Both
- * panels feed into the exact same verification flow — see
- * embeds/preEntryPanel.ts for how the Pre-Entry panel reuses the Main
- * panel's button/modal/service without any duplicated logic.
+ * Verification System V2 — replaces the old panel-deploy command
+ * entirely, per approved plan. Phase 1 ships exactly this one
+ * subcommand: pick the active mode, persisted to Supabase. Phases 2-5
+ * each add their own subcommands here (panel deployment, setup, etc.) —
+ * this file is deliberately minimal for now, not a placeholder for
+ * something bigger already written elsewhere.
  *
- * One command for the whole Verification domain, choosing which panel to
- * post, rather than a separate command per panel — keeps this scalable
- * as more panel variants show up later, and is a small step toward how a
- * future Panel Manager would work (one deploy surface, multiple panel
- * choices) without building that manager now.
+ * The old verification files (verification.config.ts, verificationService.ts,
+ * verificationPanel.ts, preEntryPanel.ts, verifyCodeButton.ts,
+ * verifyLobbyButton.ts, verifyCodeModal.ts) remain in place but inert —
+ * nothing currently deploys their panels since this command no longer
+ * does. They're removed in Phase 4 once code_lobby mode's new
+ * implementation replaces them.
  */
 
-import {
-  ChannelType,
-  ChatInputCommandInteraction,
-  PermissionFlagsBits,
-  SlashCommandBuilder,
-} from 'discord.js';
+import { ChatInputCommandInteraction, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { Command } from '../types';
-import { buildVerificationPanelPayload } from '../embeds/verificationPanel';
-import { buildPreEntryPanelPayload } from '../embeds/preEntryPanel';
-import { resolveTargetChannel } from '../utils/resolveTargetChannel';
+import { VERIFICATION_MODES } from '../config/verificationModes.config';
+import { setVerificationMode } from '../services/verificationModeService';
+import { VerificationMode } from '../database/verificationConfig.repository';
+import { embeds } from '../ui';
 import { logger } from '../utils/logger';
-
-const PANEL_BUILDERS: Record<string, () => ReturnType<typeof buildVerificationPanelPayload>> = {
-  main: buildVerificationPanelPayload,
-  'pre-entry': buildPreEntryPanelPayload,
-};
-
-const PANEL_LABELS: Record<string, string> = {
-  main: 'Main Verification',
-  'pre-entry': 'Pre-Entry',
-};
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName('verification')
-    .setDescription('Deploy a verification panel to a channel.')
-    .addStringOption((option) =>
-      option
-        .setName('panel')
-        .setDescription('Which verification panel to deploy')
-        .setRequired(true)
-        .addChoices(
-          { name: 'Main Verification', value: 'main' },
-          { name: 'Pre-Entry', value: 'pre-entry' },
+    .setDescription('Manage the Verification System.')
+    .addSubcommand((sub) =>
+      sub
+        .setName('mode')
+        .setDescription('Choose which verification mode is active.')
+        .addStringOption((opt) =>
+          opt
+            .setName('type')
+            .setDescription('Verification mode')
+            .setRequired(true)
+            .addChoices(
+              ...VERIFICATION_MODES.map((mode) => ({ name: mode.label, value: mode.key })),
+            ),
         ),
     )
-    .addChannelOption((option) =>
-      option
-        .setName('channel')
-        .setDescription('Channel to deploy the panel into (defaults to this channel)')
-        .addChannelTypes(ChannelType.GuildText)
-        .setRequired(false),
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    const panelKey = interaction.options.getString('panel', true);
-    const targetChannel = resolveTargetChannel(interaction);
-
-    if (!targetChannel) {
-      await interaction.reply({
-        content: '❌ Please choose a valid text channel.',
-        ephemeral: true,
-      });
-      return;
-    }
-
-    const buildPayload = PANEL_BUILDERS[panelKey];
-    if (!buildPayload) {
-      await interaction.reply({ content: '❌ Unknown panel type.', ephemeral: true });
-      return;
-    }
-
-    await interaction.deferReply({ ephemeral: true });
-
-    try {
-      await targetChannel.send(buildPayload());
-
-      await interaction.editReply({
-        content: `✅ ${PANEL_LABELS[panelKey]} panel deployed to ${targetChannel}.`,
-      });
-
-      logger.info(
-        `${interaction.user.tag} deployed the ${PANEL_LABELS[panelKey]} panel to #${targetChannel.name}`,
-        'VerificationCommand',
-      );
-    } catch (error) {
-      logger.error(error as Error, 'VerificationCommand');
-      await interaction.editReply({
-        content:
-          '❌ Failed to deploy the panel. Make sure the bot has permission to send ' +
-          'messages in that channel.',
-      });
-    }
+    const subcommand = interaction.options.getSubcommand();
+    if (subcommand === 'mode') return handleMode(interaction);
   },
 };
+
+async function handleMode(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (!interaction.guildId) return;
+
+  const mode = interaction.options.getString('type', true) as VerificationMode;
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    await setVerificationMode(interaction.guildId, mode, interaction.user.id);
+
+    const modeDefinition = VERIFICATION_MODES.find((m) => m.key === mode);
+
+    await interaction.editReply({
+      embeds: [
+        embeds.success({
+          title: 'Verification Mode Updated',
+          description:
+            `**${modeDefinition?.label ?? mode}** is now the active mode.\n\n` +
+            'Note: no panel is deployed yet — that\u2019s added in a later phase. ' +
+            'This only sets which mode will be used.',
+        }),
+      ],
+    });
+
+    logger.info(
+      `${interaction.user.tag} set verification mode to ${mode}`,
+      'VerificationCommand',
+    );
+  } catch (error) {
+    logger.error(error as Error, 'VerificationCommand');
+    await interaction.editReply({
+      content: '❌ Failed to update the verification mode. Please try again.',
+    });
+  }
+}
 
 export default command;
