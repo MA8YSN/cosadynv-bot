@@ -30,7 +30,7 @@ const button: Button = {
     const isWinner = await isGiveawayWinner(giveawayId, interaction.user.id);
     if (!isWinner) {
       await interaction.reply({
-        content: '❌ You are not a winner of this giveaway.',
+        content: '❌ You weren\u2019t selected for this giveaway.',
         ephemeral: true,
       });
       return;
@@ -49,6 +49,7 @@ const button: Button = {
           style: TextInputStyle.Short,
           required: true,
           maxLength: 100,
+          placeholder: type.getPlaceholder?.(giveaway.collection_config ?? {}),
         },
       ],
     });
