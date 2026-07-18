@@ -1,15 +1,20 @@
 /**
  * commands/giveaway.ts
  * ─────────────────────────────────────────────────────────────────────────
- * /giveaway create|end|reroll|list
+ * /giveaway create|end|reroll|list|export
  *
- * Admin-facing giveaway management. Talks only to giveawayService.ts —
- * never to database/giveaways.repository.ts or services/giveawayPresentation.ts
- * directly, keeping the repository -> service -> presentation layering
- * consistent even at the command boundary.
+ * Admin-facing giveaway management. Talks only to giveawayService.ts and
+ * giveawayCollectionService.ts — never to any repository or
+ * giveawayPresentation.ts directly, keeping the layering consistent even
+ * at the command boundary.
+ *
+ * `export` is staff-only via the same setDefaultMemberPermissions applied
+ * to the whole command — no separate permission setup needed, since
+ * subcommands inherit the parent command's permission gate.
  */
 
 import {
+  AttachmentBuilder,
   ChannelType,
   ChatInputCommandInteraction,
   PermissionFlagsBits,
@@ -22,6 +27,8 @@ import {
   rerollGiveaway,
   listActiveGiveaways,
 } from '../services/giveawayService';
+import { getGiveawayById, exportCollectionAsCsv } from '../services/giveawayCollectionService';
+import { SUPPORTED_CHAINS } from '../config/giveawayCollectionTypes.config';
 import { resolveTargetChannel } from '../utils/resolveTargetChannel';
 import { parseDuration } from '../utils/parseDuration';
 import { embeds } from '../ui';
@@ -46,10 +53,14 @@ const command: Command = {
             .setMinValue(1),
         )
         .addStringOption((opt) =>
+          opt.setName('duration').setDescription('e.g. 3d, 1h30m, 45m').setRequired(true),
+        )
+        .addStringOption((opt) =>
           opt
-            .setName('duration')
-            .setDescription('e.g. 3d, 1h30m, 45m')
-            .setRequired(true),
+            .setName('chain')
+            .setDescription('If this giveaway needs wallet collection (WL, mint spots, etc.)')
+            .setRequired(false)
+            .addChoices(...SUPPORTED_CHAINS.map((chain) => ({ name: chain, value: chain }))),
         )
         .addChannelOption((opt) =>
           opt
@@ -71,11 +82,15 @@ const command: Command = {
       sub
         .setName('reroll')
         .setDescription('Redraw winners for an already-ended giveaway.')
-        .addStringOption((opt) =>
-          opt.setName('id').setDescription('Giveaway ID').setRequired(true),
-        ),
+        .addStringOption((opt) => opt.setName('id').setDescription('Giveaway ID').setRequired(true)),
     )
     .addSubcommand((sub) => sub.setName('list').setDescription('List currently active giveaways.'))
+    .addSubcommand((sub) =>
+      sub
+        .setName('export')
+        .setDescription('Export winner collection submissions as CSV.')
+        .addStringOption((opt) => opt.setName('id').setDescription('Giveaway ID').setRequired(true)),
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false),
 
@@ -86,6 +101,7 @@ const command: Command = {
     if (subcommand === 'end') return handleEnd(interaction);
     if (subcommand === 'reroll') return handleReroll(interaction);
     if (subcommand === 'list') return handleList(interaction);
+    if (subcommand === 'export') return handleExport(interaction);
   },
 };
 
@@ -93,6 +109,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
   const prize = interaction.options.getString('prize', true);
   const winnerCount = interaction.options.getInteger('winners', true);
   const durationInput = interaction.options.getString('duration', true);
+  const chain = interaction.options.getString('chain') as (typeof SUPPORTED_CHAINS)[number] | null;
   const targetChannel = resolveTargetChannel(interaction);
 
   if (!targetChannel) {
@@ -121,6 +138,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
       winnerCount,
       createdBy: interaction.user.id,
       endsAt: new Date(Date.now() + durationMs),
+      chain: chain ?? undefined,
     });
 
     await interaction.editReply({
@@ -192,4 +210,28 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
   });
 }
 
-export default command; 
+async function handleExport(interaction: ChatInputCommandInteraction): Promise<void> {
+  const id = interaction.options.getString('id', true);
+  await interaction.deferReply({ ephemeral: true });
+
+  const giveaway = await getGiveawayById(id);
+
+  if (!giveaway || !giveaway.collection_type) {
+    await interaction.editReply({
+      content: '❌ No winner collection exists for that giveaway ID.',
+    });
+    return;
+  }
+
+  const csv = await exportCollectionAsCsv(giveaway);
+  const attachment = new AttachmentBuilder(Buffer.from(csv, 'utf-8'), {
+    name: `giveaway-${id}-export.csv`,
+  });
+
+  await interaction.editReply({
+    content: `✅ Export ready for **${giveaway.prize}**.`,
+    files: [attachment],
+  });
+}
+
+export default command;
