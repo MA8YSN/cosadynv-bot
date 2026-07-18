@@ -36,7 +36,9 @@ async function main(): Promise<void> {
   // Started after login (not tied to the 'ready' event) since it only
   // needs client.channels.fetch(), which hits Discord's REST API directly
   // rather than depending on gateway cache being fully populated.
+  setTimeout(() => {
   startGiveawayScheduler(client);
+}, 5000);
 }
 
 main().catch((error) => {
