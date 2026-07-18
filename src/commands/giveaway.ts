@@ -223,7 +223,7 @@ async function handleExport(interaction: ChatInputCommandInteraction): Promise<v
     return;
   }
 
-  const csv = await exportCollectionAsCsv(giveaway);
+  const csv = await exportCollectionAsCsv(giveaway, interaction.client);
   const attachment = new AttachmentBuilder(Buffer.from(csv, 'utf-8'), {
     name: `giveaway-${id}-export.csv`,
   });
