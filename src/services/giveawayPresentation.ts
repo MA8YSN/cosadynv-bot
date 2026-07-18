@@ -22,6 +22,8 @@ import {
   GiveawayPanelData,
 } from '../embeds/giveawayPanel';
 import { buildGiveawayResultPayload, GiveawayResultReason } from '../embeds/giveawayResult';
+import { buildCollectionPanelPayload } from '../embeds/giveawayCollectionPanel';
+import { CollectionStatus } from './giveawayCollectionService';
 import { logger } from '../utils/logger';
 
 /** Sends the initial giveaway panel message. Throws on failure — the caller decides how to handle that. */
@@ -119,6 +121,49 @@ export async function updateGiveawayPanelEntryCount(
         }),
       ],
     });
+  } catch (error) {
+    logger.error(error as Error, 'GiveawayPresentation');
+  }
+  
+}
+/** Posts the winner collection panel for the first time (called once, when a giveaway with a collection type ends). */
+export async function postCollectionPanel(
+  client: Client,
+  channelId: string,
+  giveaway: GiveawayRow,
+  status: CollectionStatus,
+): Promise<Message | null> {
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !(channel instanceof TextChannel)) return null;
+
+    return await channel.send(buildCollectionPanelPayload(giveaway, status));
+  } catch (error) {
+    logger.error(error as Error, 'GiveawayPresentation');
+    return null;
+  }
+}
+
+/**
+ * Edits the collection panel in place after a submission. Unlike entry
+ * counts (throttled through the scheduler due to potentially hundreds of
+ * entries), this edits immediately — submissions are bounded by
+ * winner_count, realistically single digits, so there's no rate-limit
+ * risk at this scale and immediate feedback is better UX.
+ */
+export async function updateCollectionPanel(
+  client: Client,
+  giveaway: GiveawayRow,
+  status: CollectionStatus,
+): Promise<void> {
+  if (!giveaway.collection_channel_id || !giveaway.collection_message_id) return;
+
+  try {
+    const channel = await client.channels.fetch(giveaway.collection_channel_id);
+    if (!channel || !(channel instanceof TextChannel)) return;
+
+    const message = await channel.messages.fetch(giveaway.collection_message_id);
+    await message.edit(buildCollectionPanelPayload(giveaway, status));
   } catch (error) {
     logger.error(error as Error, 'GiveawayPresentation');
   }
