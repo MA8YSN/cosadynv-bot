@@ -1,3 +1,23 @@
+async function fetchTextChannel(client: Client, channelId: string): Promise<TextChannel | null> {
+  const cached = client.channels.cache.get(channelId);
+
+  if (cached instanceof TextChannel) {
+    return cached;
+  }
+
+  try {
+    const fetched = await client.channels.fetch(channelId);
+
+    if (fetched instanceof TextChannel) {
+      return fetched;
+    }
+  } catch (error) {
+    logger.error(error as Error, 'GiveawayPresentation');
+  }
+
+  return null;
+}
+
 /**
  * services/giveawayPresentation.ts
  * ─────────────────────────────────────────────────────────────────────────
@@ -46,8 +66,8 @@ export async function deleteGiveawayMessage(
   messageId: string,
 ): Promise<void> {
   try {
-    const channel = await client.channels.fetch(channelId);
-    if (!channel || !(channel instanceof TextChannel)) return;
+    const channel = await fetchTextChannel(client, channelId);
+if (!channel) return;
 
     const message = await channel.messages.fetch(messageId);
     await message.delete();
@@ -62,8 +82,8 @@ export async function updateGiveawayPanelEnded(
   giveaway: GiveawayRow,
 ): Promise<void> {
   try {
-    const channel = await client.channels.fetch(giveaway.channel_id);
-    if (!channel || !(channel instanceof TextChannel)) return;
+    const channel = await fetchTextChannel(client, giveaway.channel_id);
+if (!channel) return;
 
     const message = await channel.messages.fetch(giveaway.message_id);
     await message.edit({
@@ -94,8 +114,8 @@ export async function announceGiveawayWinners(
   reason: GiveawayResultReason,
 ): Promise<void> {
   try {
-    const channel = await client.channels.fetch(giveaway.channel_id);
-    if (!channel || !(channel instanceof TextChannel)) return;
+    const channel = await fetchTextChannel(client, giveaway.channel_id);
+if (!channel) return;
 
     await channel.send(buildGiveawayResultPayload(giveaway, winnerUserIds, reason));
   } catch (error) {
@@ -128,8 +148,8 @@ export async function updateGiveawayPanelEntryCount(
   entryCount: number,
 ): Promise<void> {
   try {
-    const channel = await client.channels.fetch(giveaway.channel_id);
-    if (!channel || !(channel instanceof TextChannel)) return;
+    const channel = await fetchTextChannel(client, giveaway.channel_id);
+if (!channel) return;
 
     const message = await channel.messages.fetch(giveaway.message_id);
     await message.edit({
@@ -167,8 +187,8 @@ export async function postCollectionPanel(
   status: CollectionStatus,
 ): Promise<Message | null> {
   try {
-    const channel = await client.channels.fetch(channelId);
-    if (!channel || !(channel instanceof TextChannel)) return null;
+    const channel = await fetchTextChannel(client, channelId);
+if (!channel) return null;
 
     return await channel.send(buildCollectionPanelPayload(giveaway, status));
   } catch (error) {
@@ -192,8 +212,11 @@ export async function updateCollectionPanel(
   if (!giveaway.collection_channel_id || !giveaway.collection_message_id) return;
 
   try {
-    const channel = await client.channels.fetch(giveaway.collection_channel_id);
-    if (!channel || !(channel instanceof TextChannel)) return;
+  const channel = await fetchTextChannel(
+  client,
+  giveaway.collection_channel_id,
+);
+if (!channel) return;
 
     const message = await channel.messages.fetch(giveaway.collection_message_id);
     await message.edit(buildCollectionPanelPayload(giveaway, status));
