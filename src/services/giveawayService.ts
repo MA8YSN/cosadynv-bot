@@ -137,11 +137,24 @@ export async function endGiveaway(client: Client, giveawayId: string): Promise<b
   const outcome = await determineGiveawayOutcome(giveawayId);
   if (!outcome) return false;
 
+  logger.info("1 - update panel", "Giveaway");
+
   await updateGiveawayPanelEnded(client, outcome.giveaway);
-  await announceGiveawayWinners(client, outcome.giveaway, outcome.winners, 'initial');
+
+  logger.info("2 - announce winners", "Giveaway");
+
+  await announceGiveawayWinners(
+    client,
+    outcome.giveaway,
+    outcome.winners,
+    "initial",
+  );
+
+  logger.info("3 - collection", "Giveaway");
 
   if (outcome.giveaway.collection_type) {
     const status = await getCollectionStatus(outcome.giveaway.id);
+
     const message = await postCollectionPanel(
       client,
       outcome.giveaway.channel_id,
@@ -150,9 +163,15 @@ export async function endGiveaway(client: Client, giveawayId: string): Promise<b
     );
 
     if (message) {
-      await repo.setCollectionPanelMessage(outcome.giveaway.id, outcome.giveaway.channel_id, message.id);
+      await repo.setCollectionPanelMessage(
+        outcome.giveaway.id,
+        outcome.giveaway.channel_id,
+        message.id,
+      );
     }
   }
+
+  logger.info("4 - finished", "Giveaway");
 
   return true;
 }
