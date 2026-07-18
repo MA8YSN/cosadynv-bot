@@ -134,23 +134,34 @@ async function determineGiveawayOutcome(
  * feature existed.
  */
 export async function endGiveaway(client: Client, giveawayId: string): Promise<boolean> {
-  const outcome = await determineGiveawayOutcome(giveawayId);
-  if (!outcome) return false;
+  logger.info(`Ending giveaway ${giveawayId}`, 'Giveaway');
 
-  logger.info("1 - update panel", "Giveaway");
+  const outcome = await determineGiveawayOutcome(giveawayId);
+
+  if (!outcome) {
+    logger.info(`No outcome for ${giveawayId}`, 'Giveaway');
+    return false;
+  }
+
+  logger.info(
+    `Guild=${outcome.giveaway.guild_id} Channel=${outcome.giveaway.channel_id} Message=${outcome.giveaway.message_id}`,
+    'Giveaway',
+  );
+
+  logger.info('1 - update panel', 'Giveaway');
 
   await updateGiveawayPanelEnded(client, outcome.giveaway);
 
-  logger.info("2 - announce winners", "Giveaway");
+  logger.info('2 - announce winners', 'Giveaway');
 
   await announceGiveawayWinners(
     client,
     outcome.giveaway,
     outcome.winners,
-    "initial",
+    'initial',
   );
 
-  logger.info("3 - collection", "Giveaway");
+  logger.info('3 - collection', 'Giveaway');
 
   if (outcome.giveaway.collection_type) {
     const status = await getCollectionStatus(outcome.giveaway.id);
@@ -168,10 +179,15 @@ export async function endGiveaway(client: Client, giveawayId: string): Promise<b
         outcome.giveaway.channel_id,
         message.id,
       );
+
+      logger.info(
+        `Collection panel saved (${message.id})`,
+        'Giveaway',
+      );
     }
   }
 
-  logger.info("4 - finished", "Giveaway");
+  logger.info('4 - finished', 'Giveaway');
 
   return true;
 }
