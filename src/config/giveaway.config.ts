@@ -19,4 +19,14 @@ export const GIVEAWAY_CONFIG = {
    * very large ones may prefer 60s.
    */
   schedulerIntervalMs: 30 * 1000,
+
+  /**
+   * Display-only for V1 — shown on the winner collection panel as a
+   * countdown, but nothing automatically happens when it passes. Staff
+   * decide manually what to do about non-responders, using the existing
+   * /giveaway reroll command. Actual enforcement (auto-reroll, auto-ping)
+   * would mean extending the scheduler again — a real feature, not built
+   * until something actually asks for it.
+   */
+  walletSubmissionDeadlineHours: 24,
 };
