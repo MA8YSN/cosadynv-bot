@@ -3,7 +3,7 @@
     /* Language & Module */
     "target": "ES2022",
     "module": "CommonJS",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "lib": ["ES2022"],
     "resolveJsonModule": true,
     "esModuleInterop": true,
