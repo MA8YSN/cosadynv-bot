@@ -40,18 +40,36 @@ export class MintReminderService {
 
     console.log(`[MintReminderService] Found ${projects.length} active projects with mint dates`);
 
-    for (const project of projects) {
-      if (!project.mint_date) continue;
+for (const project of projects) {
+  if (!project.mint_date) {
+    console.log(`[MintReminderService] Skipping ${project.name} -> no mint date`);
+    continue;
+  }
 
-      const daysLeft = getDaysUntilMint(project.mint_date);
-      const hoursLeft = getHoursUntilMint(project.mint_date);
+  const daysLeft = getDaysUntilMint(project.mint_date);
+  const hoursLeft = getHoursUntilMint(project.mint_date);
 
-      // Skip projects that have already minted (past mint date by more than 1 day)
-      if (daysLeft < -1) continue;
+  console.log("=================================");
+  console.log(`Project: ${project.name}`);
+  console.log(`Mint Date: ${project.mint_date}`);
+  console.log(`Days Left: ${daysLeft}`);
+  console.log(`Hours Left: ${hoursLeft}`);
+  console.log("=================================");
+
+  // Skip projects that have already minted (past mint date by more than 1 day)
+  if (daysLeft < -1) {
+    console.log(`[MintReminderService] Skipping ${project.name} -> already in the past`);
+    continue;
+  }
 
       for (const interval of MINT_REMINDER_CONFIG.intervals) {
-        const shouldSend = this.shouldSendReminder(interval, daysLeft, hoursLeft);
-        if (!shouldSend) continue;
+       const shouldSend = this.shouldSendReminder(interval, daysLeft, hoursLeft);
+
+console.log(
+  `[MintReminderService] ${project.name} | ${interval.key} -> ${shouldSend}`
+);
+
+if (!shouldSend) continue;
 
         try {
           const alreadySent = await this.repository.hasReminderBeenSent(
