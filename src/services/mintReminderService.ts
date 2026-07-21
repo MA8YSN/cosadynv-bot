@@ -1,4 +1,4 @@
-import { type Client, type Guild } from "discord.js";
+import { type Guild } from "discord.js";
 import { MintProjectsRepository, type MintProject } from "../database/mintProjects.repository";
 import { MintReminderPresentation } from "./mintReminderPresentation";
 import { MINT_REMINDER_CONFIG } from "../config/mintReminder.config";
