@@ -24,7 +24,15 @@ const envSchema = z.object({
   DISCORD_GUILD_ID: z.string().optional(),
 
   SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL'),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+
+MINTKEEPER_SUPABASE_URL: z
+  .string()
+  .url('MINTKEEPER_SUPABASE_URL must be a valid URL'),
+
+MINTKEEPER_SUPABASE_SERVICE_ROLE_KEY: z
+  .string()
+  .min(1, 'MINTKEEPER_SUPABASE_SERVICE_ROLE_KEY is required'),
 
   NODE_ENV: z.enum(['development', 'production']).default('development'),
 });
