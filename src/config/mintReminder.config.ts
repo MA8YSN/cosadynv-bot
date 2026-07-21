@@ -15,7 +15,7 @@ export const MINT_REMINDER_CONFIG = {
   ],
 
   // MintKeeper base URL
-  mintKeeperBaseUrl: "https://mintkeeper.app",
+  mintKeeperBaseUrl: "https://mintkeeper.vercel.app",
 
   // Scheduler interval in milliseconds (runs every hour)
   schedulerIntervalMs: 60 * 60 * 1000,
