@@ -17,7 +17,7 @@ export class MintReminderScheduler {
    this.service = new MintReminderService(repository);
   }
 
-  start(): void {
+  start(): void { 
     if (this.interval) {
       console.warn("[MintReminderScheduler] Already running — skipping start");
       return;
