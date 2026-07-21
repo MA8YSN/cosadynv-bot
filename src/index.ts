@@ -21,7 +21,7 @@ import { loadSelectMenus } from './handlers/selectMenuHandler';
 import { loadEvents } from './handlers/eventHandler';
 import { startGiveawayScheduler } from './services/giveawayScheduler';
 import { logger } from './utils/logger';
-import { supabase } from './database/supabase';
+
 import { mintkeeperSupabase } from './database/mintkeeperSupabase';
 import { MintReminderScheduler } from './services/mintReminderScheduler';
 
