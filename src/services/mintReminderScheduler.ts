@@ -1,4 +1,4 @@
-import { type Client,  } from "discord.js";
+import { type Client } from "discord.js";
 import { MintReminderService } from "./mintReminderService";
 import { MintProjectsRepository } from "../database/mintProjects.repository";
 import { MINT_REMINDER_CONFIG } from "../config/mintReminder.config";
@@ -14,24 +14,22 @@ export class MintReminderScheduler {
     private readonly guildId: string
   ) {
     const repository = new MintProjectsRepository(supabase);
-   this.service = new MintReminderService(repository);
+    this.service = new MintReminderService(repository);
   }
 
-  start(): void { 
+  start(): void {
     if (this.interval) {
-      console.warn("[MintReminderScheduler] Already running — skipping start");
+      console.warn("[MintReminderScheduler] ⚠️  Already running — skipping start");
       return;
     }
 
-    console.log(
-      `[MintReminderScheduler] Starting — checking every ${MINT_REMINDER_CONFIG.schedulerIntervalMs / 1000 / 60} minutes`
-    );
+    const intervalMinutes = MINT_REMINDER_CONFIG.schedulerIntervalMs / 1000 / 60;
+    console.log(`[MintReminderScheduler] ▶ Starting — interval=${intervalMinutes}min | guildId=${this.guildId}`);
 
-    // Run immediately on start
     this.run();
 
-    // Then run on interval
     this.interval = setInterval(() => {
+      console.log(`[MintReminderScheduler] ⏰ Interval tick at ${new Date().toISOString()}`);
       this.run();
     }, MINT_REMINDER_CONFIG.schedulerIntervalMs);
   }
@@ -40,22 +38,31 @@ export class MintReminderScheduler {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
-      console.log("[MintReminderScheduler] Stopped");
+      console.log("[MintReminderScheduler] ⏹ Stopped");
     }
   }
 
   private async run(): Promise<void> {
+    console.log(`\n[MintReminderScheduler] ⏰ Run triggered at ${new Date().toISOString()}`);
+
+    let guild;
     try {
-      const guild = await this.client.guilds.fetch(this.guildId);
+      guild = await this.client.guilds.fetch(this.guildId);
+      console.log(`[MintReminderScheduler] ✅ Guild fetched: ${guild.name} (${guild.id})`);
+    } catch (err) {
+      console.error(`[MintReminderScheduler] ❌ Failed to fetch guild ${this.guildId}:`, err);
+      return;
+    }
 
-      if (!guild) {
-        console.error(`[MintReminderScheduler] Guild ${this.guildId} not found`);
-        return;
-      }
+    if (!guild) {
+      console.error(`[MintReminderScheduler] ❌ Guild ${this.guildId} returned null`);
+      return;
+    }
 
+    try {
       await this.service.processReminders(guild);
     } catch (err) {
-      console.error("[MintReminderScheduler] Unhandled error during run:", err);
+      console.error("[MintReminderScheduler] ❌ Unhandled error during processReminders:", err);
     }
   }
 }
