@@ -21,10 +21,16 @@ import { loadSelectMenus } from './handlers/selectMenuHandler';
 import { loadEvents } from './handlers/eventHandler';
 import { startGiveawayScheduler } from './services/giveawayScheduler';
 import { logger } from './utils/logger';
+import { supabase } from './database/supabase';
+import { MintReminderScheduler } from './services/mintReminderScheduler';
 
 async function main(): Promise<void> {
   const client = createClient();
-
+const mintReminderScheduler = new MintReminderScheduler(
+  supabase,
+  client,
+  env.DISCORD_GUILD_ID!,
+);
   await loadCommands(client);
   await loadButtons(client);
   await loadModals(client);
@@ -38,6 +44,7 @@ async function main(): Promise<void> {
   // rather than depending on gateway cache being fully populated.
   setTimeout(() => {
   startGiveawayScheduler(client);
+  mintReminderScheduler.start();
 }, 5000);
 }
 
