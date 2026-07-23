@@ -3,7 +3,6 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-
 } from "discord.js";
 import { type MintProject } from "../database/mintProjects.repository";
 import { MINT_REMINDER_CONFIG } from "../config/mintReminder.config";
@@ -20,60 +19,56 @@ function formatMintDate(isoDate: string): string {
   });
 }
 
-function getDaysRemainingLabel(isoDate: string): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const mint = new Date(year, month - 1, day);
-  const diff = Math.ceil((mint.getTime() - today.getTime()) / 86400000);
-
-  if (diff <= 0) return "Today 🚨";
-  if (diff === 1) return "Tomorrow ⚠️";
-  return `${diff} days`;
-}
-
 function formatMintPrice(
   price: number | null,
   currency: string | null
-): string | null {
-  if (!price || !currency) return null;
+): string {
+  if (!price || !currency) return "Free Mint";
   return `${price} ${currency}`;
+}
+
+function truncateNotes(notes: string, maxLength = 220): string {
+  if (notes.length <= maxLength) return notes;
+  const truncated = notes.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return `${truncated.slice(0, lastSpace > 0 ? lastSpace : maxLength)}…`;
 }
 
 export function buildMintReminderEmbed(
   project: MintProject,
   interval: ReminderInterval
 ): { embed: EmbedBuilder; row: ActionRowBuilder<ButtonBuilder> } {
+  // Project name is the title (primary heading). The urgency label
+  // (interval.label — "MINT TODAY" etc.) plus WL status become the bold
+  // first line of the description: most prominent text in the body,
+  // without competing with the name for the title slot. WL status is
+  // bold inline text here instead of a colored badge, since Discord
+  // embeds only offer one accent-color slot and that's spent on urgency.
+  const headline = `**${interval.label}**`;
+
   const embed = new EmbedBuilder()
     .setColor(interval.color)
-    .setTitle(`${interval.label}`)
-    .setDescription(`**${project.name}**`)
+    .setTitle(project.name)
+    .setDescription(headline)
     .setTimestamp();
 
-  // Mint date
+  // Mint date — the countdown itself is already communicated by the bold
+  // headline above, so this field shows only the calendar date rather
+  // than repeating "Today" / "3 days" a second time.
   if (project.mint_date) {
     embed.addFields({
-      name: "📅 Mint Date",
+      name: "Mint Date",
       value: formatMintDate(project.mint_date),
       inline: true,
     });
-
-    embed.addFields({
-      name: "⏳ Time Remaining",
-      value: getDaysRemainingLabel(project.mint_date),
-      inline: true,
-    });
   }
 
-  // Mint price
-  const priceStr = formatMintPrice(project.mint_price, project.mint_currency);
-  if (priceStr) {
-    embed.addFields({
-      name: "💰 Mint Price",
-      value: priceStr,
-      inline: true,
-    });
-  }
+  // Mint price — always shown, "Free Mint" when price/currency are absent.
+  embed.addFields({
+    name: "Mint Price",
+    value: formatMintPrice(project.mint_price, project.mint_currency),
+    inline: true,
+  });
 
   // Wallet
   if (project.wallets) {
@@ -82,47 +77,46 @@ export function buildMintReminderEmbed(
       : project.wallets.name;
 
     embed.addFields({
-      name: "👛 Wallet",
+      name: "Wallet",
       value: walletValue,
       inline: true,
     });
   }
 
-  // Notes
+  // Notes → Bio, truncated cleanly at a word boundary.
   if (project.notes) {
     embed.addFields({
-      name: "📝 Notes",
-      value: project.notes.slice(0, 1024),
+      name: "Bio",
+      value: truncateNotes(project.notes),
       inline: false,
     });
   }
 
-  // Social links
+  // Social links — only rendered if present, no placeholders. 𝕏 kept as
+  // the brand glyph (not a decorative emoji); other labels are plain
+  // text per "remove unnecessary emojis."
   const links: string[] = [];
   if (project.x_link) links.push(`[𝕏 Twitter](${project.x_link})`);
   if (project.discord_link) links.push(`[Discord](${project.discord_link})`);
   if (links.length > 0) {
     embed.addFields({
-      name: "🔗 Links",
+      name: "Links",
       value: links.join("  ·  "),
       inline: false,
     });
   }
 
-  // Banner image
   if (project.image_url) {
     embed.setImage(project.image_url);
   }
 
-  embed.setFooter({ text: "MintKeeper" });
+  embed.setFooter({ text: "Powered by MintKeeper · Cosadyn" });
 
-  // Buttons
   const row = new ActionRowBuilder<ButtonBuilder>();
 
   row.addComponents(
     new ButtonBuilder()
       .setLabel("Open Project")
-      .setEmoji("🟢")
       .setStyle(ButtonStyle.Link)
       .setURL(`${MINT_REMINDER_CONFIG.mintKeeperBaseUrl}/project/${project.id}`)
   );
