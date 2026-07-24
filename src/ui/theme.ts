@@ -11,13 +11,13 @@
 import { botConfig } from '../config/bot.config';
 
 export const colors = {
-  primary: 0x5865f2,
-  secondary: 0x5865f2,
-  success: 0x5865f2,
-  warning: 0x5865f2,
-  danger: 0x5865f2,
-  info: 0x5865f2,
-  neutral: 0x5865f2,
+  primary: 0xf2e558,
+  secondary: 0xf2e558,
+  success: 0xf2e558,
+  warning: 0xf2e558,
+  danger: 0xf2e558,
+  info: 0xf2e558,
+  neutral: 0xf2e558,
 } as const;
 
 export type ColorKey = keyof typeof colors;
