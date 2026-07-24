@@ -11,7 +11,7 @@
 import { botConfig } from '../config/bot.config';
 
 export const colors = {
-  primary: 0xf1c40f, // Bot role color (gold/yellow) — update if you grab the exact hex later
+  primary: 0x5865f2,
   secondary: 0x2b2d31,
   success: 0x2ecc71,
   warning: 0xf1c40f,
@@ -22,13 +22,6 @@ export const colors = {
 
 export type ColorKey = keyof typeof colors;
 
-/**
- * Unicode emoji for now, so the bot looks good with zero setup. Swap any
- * of these for a custom Discord emoji string (e.g. `<:verified:123456789>`)
- * once the server has its own emoji set — this is the only place that
- * needs to change; every embed/button referencing `icons.success` updates
- * automatically.
- */
 export const icons = {
   success: '✅',
   error: '❌',
@@ -51,24 +44,14 @@ export const icons = {
 
 export type IconKey = keyof typeof icons;
 
-/**
- * Brand identity used in embed footers/authors by default. `name` is
- * pulled from bot.config.ts (the one place that owns the bot's display
- * name) so it isn't duplicated here. Fill in `iconURL` once you have a
- * server icon / bot avatar hosted somewhere — every embed's footer will
- * pick it up automatically.
- */
 export const brand = {
   name: botConfig.name,
+  // TODO: set this to your hosted community logo URL. Used as the footer
+  // icon everywhere, and as the thumbnail on any embed built with
+  // `useLogo: true`. Until set, both simply render without an icon.
   iconURL: undefined as string | undefined,
 };
-/**
- * Converts a numeric color (e.g. colors.primary, the format ui/embed.ts
- * uses) into a CSS hex string (e.g. "#5865f2"), the format
- * @napi-rs/canvas expects. Lets welcomeThemes.config.ts reuse the bot's
- * actual brand colors instead of hardcoding a second, separate set of
- * hex values that could drift out of sync.
- */
+
 export function toHex(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`;
 }
