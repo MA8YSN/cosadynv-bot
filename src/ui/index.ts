@@ -16,6 +16,7 @@
 export * from './theme';
 export * from './embed';
 export * from './buttons';
+export * from './terminology';
 
 // Reserved — exported now so feature code can `import { ... } from '../ui'`
 // without needing to know these live in separate files, once implemented.
