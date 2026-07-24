@@ -28,7 +28,7 @@ function truncateNotes(notes: string, maxLength = 220): string {
   return `${truncated.slice(0, lastSpace > 0 ? lastSpace : maxLength)}…`;
 }
 
-export function buildMintReminderEmbed(
+export function buildMintReminderEmbed( 
   project: MintProject,
   interval: ReminderInterval,
 ): { embed: ReturnType<typeof embeds.banner>; row: ActionRowBuilder<ButtonBuilder> } {
