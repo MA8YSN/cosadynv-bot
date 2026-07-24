@@ -1,6 +1,6 @@
 
 import { ActionRowBuilder, ButtonBuilder,ButtonStyle } from 'discord.js';
-import { embeds, buttons,  TERMS } from '../ui';
+import { embeds,  TERMS } from '../ui';
 import { type MintProject } from '../database/mintProjects.repository';
 import { MINT_REMINDER_CONFIG } from '../config/mintReminder.config';
 
