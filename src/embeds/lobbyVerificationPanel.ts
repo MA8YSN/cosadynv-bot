@@ -1,26 +1,19 @@
-/**
- * embeds/lobbyVerificationPanel.ts
- * ─────────────────────────────────────────────────────────────────────────
- * The Mode 3 main panel — two buttons: "I Have a Code" / "Join Waiting
- * Area". Same content/shape as the original verification system's main
- * panel, rebuilt on the V2 architecture.
- */
-
 import { embeds, buttons, row } from '../ui';
 
-export function buildLobbyVerificationPanelEmbed() {
+export function buildLobbyVerificationPanelEmbed(guildName: string) {
   return embeds.brand({
-    title: '🔐 Verification',
+    title: 'Verification',
+    icon: 'shield',
     description: [
-      'Welcome! To access the rest of the server, please verify below.',
+      `Welcome to **${guildName}**.`,
       '',
-      '🔑 **Have an invite code?** Click "I Have a Code" and enter it.',
-      '🕐 **No code yet?** Click "Join Waiting Area" and a team member will assist you.',
+      '**Have an invite code?** Select **I Have a Code** and enter it.',
+      '**No code yet?** Select **Join Waiting Area** — a team member will assist you shortly.',
     ].join('\n'),
   });
 }
 
-export function buildLobbyVerificationPanelPayload() {
+export function buildLobbyVerificationPanelPayload(guildName: string) {
   const actionRow = row(
     buttons.success({
       customId: 'lobby_verify_code_button',
@@ -35,7 +28,7 @@ export function buildLobbyVerificationPanelPayload() {
   );
 
   return {
-    embeds: [buildLobbyVerificationPanelEmbed()],
+    embeds: [buildLobbyVerificationPanelEmbed(guildName)],
     components: [actionRow],
   };
 }
