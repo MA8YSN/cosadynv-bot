@@ -1,20 +1,14 @@
-/**
- * embeds/captchaVerificationPanel.ts
- * ─────────────────────────────────────────────────────────────────────────
- * The Captcha Verification panel — one embed, one button. The captcha
- * itself appears in a modal after the button is clicked, not here.
- */
-
 import { embeds, buttons, row } from '../ui';
 
-export function buildCaptchaVerificationPanelEmbed() {
+export function buildCaptchaVerificationPanelEmbed(guildName: string) {
   return embeds.brand({
-    title: '🔐 Verification',
-    description: 'Welcome! Click the button below, solve the quick challenge, and you\u2019re in.',
+    title: 'Verification',
+    icon: 'shield',
+    description: `Welcome to **${guildName}**.\n\nClick **Verify** below, complete a quick check, and you\u2019re in.`,
   });
 }
 
-export function buildCaptchaVerificationPanelPayload() {
+export function buildCaptchaVerificationPanelPayload(guildName: string) {
   const actionRow = row(
     buttons.success({
       customId: 'captcha_verify_button',
@@ -24,7 +18,7 @@ export function buildCaptchaVerificationPanelPayload() {
   );
 
   return {
-    embeds: [buildCaptchaVerificationPanelEmbed()],
+    embeds: [buildCaptchaVerificationPanelEmbed(guildName)],
     components: [actionRow],
   };
 }
