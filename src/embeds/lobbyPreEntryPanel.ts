@@ -1,27 +1,14 @@
-/**
- * embeds/lobbyPreEntryPanel.ts
- * ─────────────────────────────────────────────────────────────────────────
- * The Pre-Entry panel for members already in the Lobby. Reuses the SAME
- * customId ('lobby_verify_code_button') as the main panel's code button —
- * buttons/lobbyVerifyCodeButton.ts already handles it, so this needs no
- * separate button handler. Same reuse trick the original verification
- * system used between its Main and Pre-Entry panels.
- */
-
 import { embeds, buttons, row } from '../ui';
 
-export function buildLobbyPreEntryPanelEmbed() {
+export function buildLobbyPreEntryPanelEmbed(guildName: string) {
   return embeds.brand({
-    title: '⚓ Pre-Entry',
-    description: [
-      'You\u2019re in the Lobby — welcome!',
-      '',
-      'Got an invite code? Enter it below to unlock full access to the community.',
-    ].join('\n'),
+    title: 'Pre-Entry',
+    icon: 'unlock',
+    description: `You\u2019re currently in the **Lobby** for **${guildName}**.\n\nGot an invite code? Select **Enter Code** below to unlock full access.`,
   });
 }
 
-export function buildLobbyPreEntryPanelPayload() {
+export function buildLobbyPreEntryPanelPayload(guildName: string) {
   const actionRow = row(
     buttons.success({
       customId: 'lobby_verify_code_button',
@@ -31,7 +18,7 @@ export function buildLobbyPreEntryPanelPayload() {
   );
 
   return {
-    embeds: [buildLobbyPreEntryPanelEmbed()],
+    embeds: [buildLobbyPreEntryPanelEmbed(guildName)],
     components: [actionRow],
   };
 }
