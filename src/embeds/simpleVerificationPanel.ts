@@ -1,20 +1,14 @@
-/**
- * embeds/simpleVerificationPanel.ts
- * ─────────────────────────────────────────────────────────────────────────
- * The Simple Verification panel — one embed, one button. Built through
- * src/ui, matching every other panel in the bot.
- */
-
 import { embeds, buttons, row } from '../ui';
 
-export function buildSimpleVerificationPanelEmbed() {
+export function buildSimpleVerificationPanelEmbed(guildName: string) {
   return embeds.brand({
-    title: '🔐 Verification',
-    description: 'Welcome! Click the button below to verify and unlock the rest of the server.',
+    title: 'Verification',
+    icon: 'shield',
+    description: `Welcome to **${guildName}**.\n\nClick **Verify** below to confirm you\u2019re human and unlock full access to the server.`,
   });
 }
 
-export function buildSimpleVerificationPanelPayload() {
+export function buildSimpleVerificationPanelPayload(guildName: string) {
   const actionRow = row(
     buttons.success({
       customId: 'simple_verify_button',
@@ -24,7 +18,7 @@ export function buildSimpleVerificationPanelPayload() {
   );
 
   return {
-    embeds: [buildSimpleVerificationPanelEmbed()],
+    embeds: [buildSimpleVerificationPanelEmbed(guildName)],
     components: [actionRow],
   };
 }
