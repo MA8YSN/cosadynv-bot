@@ -1,22 +1,3 @@
-/**
- * commands/verification.ts
- * ─────────────────────────────────────────────────────────────────────────
- * /verification mode|deploy|set-role|code|setup
- *
- * Full V2 command surface (Phases 1-5 combined):
- *   mode      - choose the active verification mode
- *   deploy    - post the panel matching the active mode (panel choice
- *               only matters for code_lobby, which has Main + Pre-Entry)
- *   set-role  - manually set Verified/Lobby role (superseded by `setup`
- *               for new configurations, still useful for existing roles)
- *   code      - add/remove/list valid codes (code_lobby mode only)
- *   setup     - automatic server setup: creates missing roles/channels,
- *               configures their permissions, idempotent
- *
- * Talks only to verificationModeService.ts, lobbyVerificationService.ts,
- * and verificationSetupService.ts — never to the repository directly.
- */
-
 import {
   ChannelType,
   ChatInputCommandInteraction,
@@ -42,14 +23,18 @@ import { embeds } from '../ui';
 import { logger } from '../utils/logger';
 
 type PanelChoice = 'main' | 'pre-entry';
-type PanelBuilder = (panel: PanelChoice) => ReturnType<typeof buildSimpleVerificationPanelPayload>;
+type PanelBuilder = (
+  guildName: string,
+  panel: PanelChoice,
+) => ReturnType<typeof buildSimpleVerificationPanelPayload>;
 
-/** Dispatch table: which panel(s) each mode deploys. Adding a mode's panel here is the only wiring needed for /verification deploy to support it. */
 const MODE_PANEL_BUILDERS: Partial<Record<VerificationMode, PanelBuilder>> = {
-  simple: () => buildSimpleVerificationPanelPayload(),
-  captcha: () => buildCaptchaVerificationPanelPayload(),
-  code_lobby: (panel) =>
-    panel === 'pre-entry' ? buildLobbyPreEntryPanelPayload() : buildLobbyVerificationPanelPayload(),
+  simple: (guildName) => buildSimpleVerificationPanelPayload(guildName),
+  captcha: (guildName) => buildCaptchaVerificationPanelPayload(guildName),
+  code_lobby: (guildName, panel) =>
+    panel === 'pre-entry'
+      ? buildLobbyPreEntryPanelPayload(guildName)
+      : buildLobbyVerificationPanelPayload(guildName),
 };
 
 const command: Command = {
@@ -170,7 +155,7 @@ async function handleMode(interaction: ChatInputCommandInteraction): Promise<voi
 }
 
 async function handleDeploy(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!interaction.guildId) return;
+  if (!interaction.guild) return;
 
   const panelChoice = (interaction.options.getString('panel') as PanelChoice | null) ?? 'main';
   const targetChannel = resolveTargetChannel(interaction);
@@ -180,7 +165,7 @@ async function handleDeploy(interaction: ChatInputCommandInteraction): Promise<v
     return;
   }
 
-  const config = await getVerificationConfig(interaction.guildId);
+  const config = await getVerificationConfig(interaction.guild.id);
   if (!config || !config.active_mode) {
     await interaction.reply({
       content: '❌ No verification mode is set. Run `/verification mode` first.',
@@ -201,7 +186,7 @@ async function handleDeploy(interaction: ChatInputCommandInteraction): Promise<v
   await interaction.deferReply({ ephemeral: true });
 
   try {
-    await targetChannel.send(buildPayload(panelChoice));
+    await targetChannel.send(buildPayload(interaction.guild.name, panelChoice));
     await interaction.editReply({ content: `✅ Verification panel deployed to ${targetChannel}.` });
 
     logger.info(
@@ -261,7 +246,6 @@ async function handleCode(interaction: ChatInputCommandInteraction): Promise<voi
       return;
     }
 
-    // action === 'list'
     const codes = await listValidCodes(interaction.guildId);
     await interaction.editReply({
       embeds: [
