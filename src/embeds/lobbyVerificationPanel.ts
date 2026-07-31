@@ -1,9 +1,11 @@
 import { embeds, buttons, row } from '../ui';
+import { ASSETS } from '../config/assets';
 
 export function buildLobbyVerificationPanelEmbed(guildName: string) {
-  return embeds.brand({
+  return embeds.banner({
     title: 'Verification',
     icon: 'shield',
+    image: ASSETS.banners.verification || undefined,
     description: [
       `Welcome to **${guildName}**.`,
       '',
