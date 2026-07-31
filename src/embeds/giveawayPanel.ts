@@ -1,15 +1,6 @@
-/**
- * embeds/giveawayPanel.ts
- * ─────────────────────────────────────────────────────────────────────────
- * The giveaway panel — active and ended variants — plus the Enter button.
- * Built entirely through src/ui. Pure rendering only: takes plain data,
- * returns embeds/payloads. No Discord sending, no database access — that
- * belongs to services/giveawayPresentation.ts and
- * database/giveaways.repository.ts respectively.
- */
-
 import { embeds, buttons, row, colors } from '../ui';
 import { GiveawayRow } from '../database/giveaways.repository';
+import { ASSETS } from '../config/assets';
 
 export interface GiveawayPanelData {
   id: string;
@@ -22,17 +13,17 @@ export interface GiveawayPanelData {
 export function buildActiveGiveawayPanelEmbed(giveaway: GiveawayPanelData) {
   const endsAtSeconds = Math.floor(giveaway.endsAt.getTime() / 1000);
 
-  return embeds.brand({
+  return embeds.banner({
     title: 'Giveaway',
     icon: 'gift',
-    description: [
-      `**Prize:** ${giveaway.prize}`,
-      `**Winners:** ${giveaway.winnerCount}`,
-      `**Entries:** ${giveaway.entryCount}`,
-      `**Ends:** <t:${endsAtSeconds}:R>`,
-      '',
-      'Click the button below to enter!',
-    ].join('\n'),
+    image: ASSETS.banners.giveaway || undefined,
+    description: 'Click the button below to enter.',
+    fields: [
+      { name: 'Prize', value: giveaway.prize, inline: true },
+      { name: 'Winners', value: String(giveaway.winnerCount), inline: true },
+      { name: 'Entries', value: String(giveaway.entryCount), inline: true },
+      { name: 'Ends', value: `<t:${endsAtSeconds}:R>`, inline: true },
+    ],
   });
 }
 
@@ -41,15 +32,11 @@ export function buildEndedGiveawayPanelEmbed(giveaway: GiveawayRow) {
     title: 'Giveaway Ended',
     icon: 'gift',
     color: colors.neutral,
-    description: [
-      `**Prize:** ${giveaway.prize}`,
-      '',
-      'This giveaway has ended. Winners have been announced below.',
-    ].join('\n'),
+    description: 'This giveaway has ended. Winners have been announced below.',
+    fields: [{ name: 'Prize', value: giveaway.prize, inline: true }],
   });
 }
 
-/** Full message payload for a freshly created giveaway — embed + the Enter button. */
 export function buildGiveawayPanelPayload(giveaway: GiveawayPanelData) {
   const actionRow = row(
     buttons.success({
