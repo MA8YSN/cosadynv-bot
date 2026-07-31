@@ -5,7 +5,7 @@ export function buildCaptchaVerificationPanelEmbed(guildName: string) {
   return embeds.banner({
     title: 'Verification',
     icon: 'shield',
-    image: ASSETS.banners.verification || undefined,
+    image: ASSETS.banners.welcome || undefined,
     description: `Welcome to **${guildName}**.\n\nClick **Verify** below, complete a quick check, and you\u2019re in.`,
   });
 }
