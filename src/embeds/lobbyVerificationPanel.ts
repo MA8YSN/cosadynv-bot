@@ -5,7 +5,7 @@ export function buildLobbyVerificationPanelEmbed(guildName: string) {
   return embeds.banner({
     title: 'Verification',
     icon: 'shield',
-    image: ASSETS.banners.verification || undefined,
+    image: ASSETS.banners.welcome || undefined,
     description: [
       `Welcome to **${guildName}**.`,
       '',
