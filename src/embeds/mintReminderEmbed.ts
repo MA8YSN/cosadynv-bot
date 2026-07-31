@@ -1,8 +1,8 @@
 
-import { ActionRowBuilder, ButtonBuilder,ButtonStyle } from 'discord.js';
-import { embeds,  TERMS } from '../ui';
+import { embeds, buttons, row, TERMS } from '../ui';
 import { type MintProject } from '../database/mintProjects.repository';
 import { MINT_REMINDER_CONFIG } from '../config/mintReminder.config';
+import { ASSETS } from '../config/assets';
 
 export type ReminderInterval = (typeof MINT_REMINDER_CONFIG.intervals)[number];
 
@@ -28,17 +28,21 @@ function truncateNotes(notes: string, maxLength = 220): string {
   return `${truncated.slice(0, lastSpace > 0 ? lastSpace : maxLength)}…`;
 }
 
-export function buildMintReminderEmbed( 
+export function buildMintReminderEmbed(
   project: MintProject,
   interval: ReminderInterval,
-): { embed: ReturnType<typeof embeds.banner>; row: ActionRowBuilder<ButtonBuilder> } {
+): {
+  embed: ReturnType<typeof embeds.banner>;
+  row: ReturnType<typeof row>;
+} {
   const headline = `**${interval.label}**`;
 
   const embed = embeds.banner({
     title: project.name,
     description: headline,
     color: interval.color,
-    image: project.image_url ?? undefined,
+    image: ASSETS.banners.mintReminder || undefined,
+    thumbnail: project.image_url ?? undefined,
     footerText: 'Powered by MintKeeper · Cosadyn',
   });
 
@@ -87,15 +91,12 @@ export function buildMintReminderEmbed(
     });
   }
 
-  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-  new ButtonBuilder()
-    .setLabel("Open Project")
-    .setStyle(ButtonStyle.Link)
-    .setURL(`${MINT_REMINDER_CONFIG.mintKeeperBaseUrl}/project/${project.id}`)
-);
+  const actionRow = row(
+    buttons.link({
+      label: 'Open Project',
+      url: `${MINT_REMINDER_CONFIG.mintKeeperBaseUrl}/project/${project.id}`,
+    }),
+  );
 
-return {
-  embed,
-  row: actionRow,
-};
+  return { embed, row: actionRow };
 }
