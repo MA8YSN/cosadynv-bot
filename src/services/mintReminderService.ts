@@ -171,18 +171,11 @@ export class MintReminderService {
     console.log("─".repeat(60));
   }
 
-  private shouldSendReminder(
-    interval: (typeof MINT_REMINDER_CONFIG.intervals)[number],
-    daysLeft: number,
-    hoursLeft: number
-  ): boolean {
-    switch (interval.key) {
-      case "7d":    return daysLeft === 7;
-      case "3d":    return daysLeft === 3;
-      case "24h":   return daysLeft === 1;
-      case "today": return daysLeft === 0;
-      case "1h":    return hoursLeft > 0 && hoursLeft <= 1;
-      default:      return false;
-    }
-  }
+ private shouldSendReminder(
+  interval: (typeof MINT_REMINDER_CONFIG.intervals)[number],
+  daysLeft: number,
+  _hoursLeft: number
+): boolean {
+  return interval.key === "today" && daysLeft === 0;
+}
 }
