@@ -11,7 +11,7 @@ export const MINT_REMINDER_CONFIG = {
       key: "today",
       days: 0,
       label: "🚨 Mint Today",
-      color: 0xff0000,
+      color: 0xF4C542,
     },
   ],
 
