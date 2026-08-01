@@ -211,5 +211,20 @@ export async function rerollGiveaway(client: Client, giveawayId: string): Promis
 
   await repo.replaceWinners(giveawayId, newWinners);
   await announceGiveawayWinners(client, giveaway, newWinners, 'reroll');
+
+  // Reuses the exact same panel/status/repository functions endGiveaway()
+  // already uses — no new code, no duplicated wallet-collection logic.
+  // Posts a NEW panel message rather than editing the original (mirrors
+  // how reroll already posts a new announcement rather than editing the
+  // old one); the prior panel message is left in the channel as-is.
+  if (giveaway.collection_type) {
+    const status = await getCollectionStatus(giveawayId);
+    const message = await postCollectionPanel(client, giveaway.channel_id, giveaway, status);
+
+    if (message) {
+      await repo.setCollectionPanelMessage(giveawayId, giveaway.channel_id, message.id);
+    }
+  }
+
   return true;
 }
