@@ -5,13 +5,14 @@ export const MINT_REMINDER_CONFIG = {
   // Role to ping (set to null to disable pinging)
   pingRoleName: "Mints" as string | null,
 
-  // Reminder intervals in days (and special "today" / "1hour")
+  // Single reminder sent only on the mint day
   intervals: [
-    { key: "7d",    days: 7,    label: "🚀 Upcoming Mint",   color: 0x10b981 },
-    { key: "3d",    days: 3,    label: "🔥 Mint This Week",  color: 0xf59e0b },
-    { key: "24h",   days: 1,    label: "⚠️ Tomorrow",         color: 0xef4444 },
-    { key: "today", days: 0,    label: "🚨 Mint Today",       color: 0xff0000 },
-    { key: "1h",    days: null, label: "⏰ Mint Starts Soon", color: 0xff6b6b },
+    {
+      key: "today",
+      days: 0,
+      label: "🚨 Mint Today",
+      color: 0xff0000,
+    },
   ],
 
   // MintKeeper base URL
